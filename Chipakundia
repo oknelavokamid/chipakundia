@@ -1,0 +1,86 @@
+def get_meter_groupings_recursive(target_sum, current_grouping, all_groupings):
+    """
+    Рекурсивно находит все возможные разбиения target_sum на группы из 2 и 3.
+    Порядок групп важен.
+    """
+    if target_sum == 0:
+        all_groupings.append(list(current_grouping)) # Добавляем копию
+        return
+    if target_sum < 0:
+        return
+
+    # Попробовать добавить группу из 2 долей
+    current_grouping.append(2)
+    get_meter_groupings_recursive(target_sum - 2, current_grouping, all_groupings)
+    current_grouping.pop() # backtracking
+
+    # Попробовать добавить группу из 3 долей
+    current_grouping.append(3)
+    get_meter_groupings_recursive(target_sum - 3, current_grouping, all_groupings)
+    current_grouping.pop() # backtracking
+
+def generate_accent_pattern_from_grouping(grouping):
+    """
+    Создает акцентный паттерн из списка групп.
+    [1, 0, 1, 0, 0] для группировки [2, 3]
+    """
+    pattern = []
+    for group_size in grouping:
+        pattern.append(1) # Акцент на начало группы
+        pattern.extend([0] * (group_size - 1)) # Безударные слоги в группе
+    return pattern
+
+def analyze_complex_meters():
+    """
+    Основная функция для анализа и вывода паттернов сложных метров.
+    """
+    meter_patterns = {}
+
+    # 1. Размер 1/4
+    meter_patterns["1/4"] = [[1]]
+
+    # 2. Размер 2/4
+    # Исходя из интерпретации: "акцент на первую, без акцента на вторую" -> [1,0]
+    # "акцент на вторую, без акцента на первую (подразумевается)" -> [0,1]
+    meter_patterns["2/4"] = [[1, 0], [0, 1]]
+
+    # 3. Нечетные размеры от 3/4 до 25/4
+    for N in range(3, 26): # Числитель размера
+        if N % 2 != 0: # Только нечетные размеры
+            meter_name = f"{N}/4"
+            all_groupings_for_N = []
+            get_meter_groupings_recursive(N, [], all_groupings_for_N)
+
+            patterns_for_meter = []
+            if not all_groupings_for_N and N == 3: # Особый случай для 3/4, если он не разбивается на 2 и 3, а является простой группой 3.
+                                                 # Наша get_meter_groupings_recursive должна вернуть [[3]] для N=3
+                # get_meter_groupings_recursive(3, [], []) -> [[3]]
+                # поэтому этот if может быть не нужен если рекурсия отрабатывает чисто для 3
+                pass # get_meter_groupings_recursive должна сама справиться с N=3 -> [[3]]
+
+            for grouping in all_groupings_for_N:
+                patterns_for_meter.append(generate_accent_pattern_from_grouping(grouping))
+            
+            if patterns_for_meter: # Добавляем, только если найдены паттерны
+                 meter_patterns[meter_name] = patterns_for_meter
+            elif N > 0 and not patterns_for_meter:
+                 # Это может случиться, если N не может быть составлено из 2 и 3.
+                 # Например, N=1 (но мы начинаем с 3).
+                 # Любое N >= 2 может быть составлено из 2 и 3 (кроме N=1).
+                 # Например, 3 = 3.
+                 # Если для какого-то нечетного N > 1 не нашлось разбиений (что маловероятно),
+                 # можно добавить стандартный простой паттерн, если N=3.
+                 if N == 3 and not patterns_for_meter: # Если для 3/4 не было найдено (хотя должно [[3]])
+                     meter_patterns["3/4"] = [[1,0,0]] # Стандартный 3/4
+
+    return meter_patterns
+
+if __name__ == "__main__":
+    analyzed_meters = analyze_complex_meters()
+    for meter, patterns in analyzed_meters.items():
+        print(f"Размер: {meter}")
+        if not patterns:
+            print("  Не найдено стандартных сложных группировок (возможно, простой метр или требует особого определения).")
+        for i, pattern in enumerate(patterns):
+            print(f"  Вариант {i+1}: {pattern}")
+        print("-" * 20)
