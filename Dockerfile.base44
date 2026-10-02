@@ -1,0 +1,22 @@
+FROM python:3.10
+
+# System dependencies: fluidsynth for MIDI audio synthesis
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fluidsynth \
+    libfluidsynth3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python dependencies
+RUN pip install --no-cache-dir \
+    jupyterlab \
+    notebook \
+    tensorflow \
+    pretty_midi \
+    pyfluidsynth \
+    pandas \
+    numpy \
+    seaborn \
+    matplotlib \
+    ipywidgets
+
+WORKDIR /app
